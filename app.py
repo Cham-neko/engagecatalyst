@@ -1,5 +1,3 @@
-import sys
-sys.path.append('/Users/koujinkume/.pyenv/versions/3.12.5/lib/python3.12/site-packages')
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
