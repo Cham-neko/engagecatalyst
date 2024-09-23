@@ -8,13 +8,18 @@ import time
 import plotly.express as px
 import os
 import base64
+from statsmodels.stats.outliers_influence import variance_inflation_factor
+
 # ページ設定
 st.set_page_config(layout="wide", page_title="従業員エンゲージメント分析")
 
 # CSSでデザインをカスタマイズ
 def load_css(file_name):
-    with open(file_name) as f:
-        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    try:
+        with open(file_name) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.error(f"CSSファイルが見つかりません: {file_name}")
 
 # CSSをロード
 load_css("styles.css")
@@ -27,12 +32,11 @@ def get_image_as_base64(image_path):
     with open(image_path, "rb") as img_file:
         return base64.b64encode(img_file.read()).decode('utf-8')
 
-# 画像をポップアップ内に表示するため、Base64に変換してHTMLに埋め込む
-image_path = "robot.png"  # robot.pngのパスを確認
-if os.path.exists(image_path):
-    image_base64 = get_image_as_base64(image_path)
+#上部を消す
 
-    # 常に右下に表示されるポップアップのCSSとHTML
+
+# ポップアップを表示する関数
+def display_popup(image_base64):
     popup_html = f"""
     <div id="popup">
         <img src="data:image/png;base64,{image_base64}" id="popup-icon" alt="robot icon">
@@ -42,16 +46,15 @@ if os.path.exists(image_path):
         </div>
     </div>
     """
-    # ポップアップの表示
     st.markdown(popup_html, unsafe_allow_html=True)
 
-
-
-    
+# 画像のパスを動的に取得
+image_path = os.path.join(os.getcwd(), "robot.png")
+if os.path.exists(image_path):
+    image_base64 = get_image_as_base64(image_path)
+    display_popup(image_base64)
 else:
     st.warning("画像が見つかりません")
-
-
 
 # CSVファイルの読み込み
 @st.cache_data
@@ -74,8 +77,7 @@ def preprocess_data(df):
     numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
     return df, numeric_columns
 
-
-# 記述統計の実行（選択したカラムのデータに対して平均、分布、標準偏差、最大値、最小値を表示）
+# 記述統計の実行
 def descriptive_statistics(df, numeric_columns):
     st.subheader("記述統計")
     
@@ -104,8 +106,6 @@ def descriptive_statistics(df, numeric_columns):
         fig = px.histogram(df, x=selected_column, title=f"{selected_column}の分布")
         st.plotly_chart(fig)
 
-
-
 # 相関分析の実行
 def correlation_analysis(df, numeric_columns):
     corr_matrix = df[numeric_columns].corr()
@@ -121,6 +121,13 @@ def correlation_analysis(df, numeric_columns):
                  labels={'x': '変数', 'y': f'{target_var}との相関係数'},
                  title=f"{target_var}との上位{n_items}個の高相関項目（相関係数が高い項目から順に並びます）")
     st.plotly_chart(fig)
+
+# マルチコリニアリティのチェック
+def check_multicollinearity(X):
+    vif_data = pd.DataFrame()
+    vif_data["特徴量"] = X.columns
+    vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(len(X.columns))]
+    return vif_data
 
 # 回帰分析の実行
 def regression_analysis(df, numeric_columns):
@@ -142,6 +149,11 @@ def regression_analysis(df, numeric_columns):
         st.error("欠損値を含むデータがあります。欠損値を除去または補完してください。")
         return
     
+    # マルチコリニアリティチェック
+    vif_result = check_multicollinearity(X)
+    st.write("マルチコリニアリティチェック結果:　VIFが全て５未満であれば多重共線性（似過ぎ問題）がないと言えます")
+    st.write(vif_result)
+    
     # 回帰分析を実行
     model = LinearRegression()
     model.fit(X, y)
@@ -154,8 +166,6 @@ def regression_analysis(df, numeric_columns):
     r_squared = model.score(X, y)
     st.markdown(f"<p>切片: {model.intercept_:.4f}</p>", unsafe_allow_html=True)
     st.markdown(f"<p>決定係数 (<span style='color:red; font-weight:bold;'>R²: {r_squared:.4f}</span>)　0.5以上で中程度以上の因果関係があると言えます</p>", unsafe_allow_html=True)
-
-
 
 # クロス集計の実行
 @st.cache_data
@@ -214,9 +224,6 @@ def main():
     if 'df' not in st.session_state:
         st.session_state.df = None
 
-    # ポップアップの表示
-    st.markdown(popup_html, unsafe_allow_html=True)
-
     if page == "データアップロード":
         st.title("従業員エンゲージメント分析アプリ")
 
@@ -264,14 +271,20 @@ def main():
     elif page == "クロス集計":
         st.title("クロス集計「群ごとの傾向の違いを見る」")
         if st.session_state.df is not None:
-            column_y = st.selectbox("クロス集計のY軸（目的変数）を選択してください", st.session_state.df.columns)
-            column_x = st.selectbox("クロス集計のX軸（説明変数）を選択してください", st.session_state.df.columns)
+            column_y = st.selectbox("クロス集計の表頭（目的変数）を選択してください", st.session_state.df.columns)
+            column_x = st.selectbox("クロス集計の表側（説明変数）を選択してください", st.session_state.df.columns)
+            # セレクトボックスに特定のIDを付与する
+            st.markdown('<div class="small-selectbox">', unsafe_allow_html=True)
             decimal_places = st.selectbox("%表の小数点の表示桁数を選択してください", [1, 2, 3, 4], index=1)
+            st.markdown('</div>', unsafe_allow_html=True)
+
             with st.spinner('分析中...'):
                 time.sleep(2)
                 crosstab_analysis(st.session_state.df, column_x, column_y, decimal_places)
         else:
             st.warning("データがアップロードされていません。データアップロードページでCSVファイルをアップロードしてください。")
 
+
 if __name__ == "__main__":
     main()
+
