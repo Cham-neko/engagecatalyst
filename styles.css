@@ -1,0 +1,239 @@
+/* タイトルの色をグラデーションに変更し、洗練されたフォントを使用 */
+h1,h5 {
+    background: linear-gradient(90deg, #3498db, #8e44ad);
+    background-clip: text;  /* 標準のプロパティ */
+    -webkit-background-clip: text;  /* ベンダープリフィックス */
+
+    color: transparent;
+    font-size: 52px;
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h5 {
+    margin: 10px 0 0; /* 上に余白を追加 */
+    font-size: 20px;
+}
+
+/* ボタンをシャドウ付きでホバー時にアニメーション */
+button {
+    background-color: #e74c3c;
+    color: white;
+    border-radius: 12px;
+    padding: 12px 24px;
+    font-size: 18px;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+    background-color: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+
+}
+
+/* 全体のフォントと余白を調整し、視認性とモダンさを向上 */
+body {
+    font-family: 'Poppins', sans-serif;
+    font-size: 18px;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f7f7f7;
+}
+
+/* コンテナの背景に柔らかいグラデーションを追加 */
+.stApp {
+    background: linear-gradient(120deg, #fdfbfb, #ebedee);
+    padding: 50px;
+    border-radius: 12px;
+    box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+/* サイドメニューのテキストのスタイルをカスタマイズ */
+.stSidebar .stRadio label {
+    font-size: 25px; /* フォントサイズを調整 */
+    font-family: 'Poppins', sans-serif; /* フォントスタイルを統一 */
+    font-weight: 800; /* テキストの太さを調整 */
+    margin-bottom: 12px; /* テキスト間のスペースを調整 */
+    color: #2c3e50; /* テキストの色を変更 */
+}
+
+/* メニュー全体のスタイルを調整（必要に応じて） */
+.stSidebar {
+    padding: 20px; /* メニューの内側の余白を調整 */
+    background-color: #ecf0f1; /* 背景色を変更 */
+    border-radius: 12px; /* メニュー全体に角丸を追加 */
+}
+
+/* Browse Filesボタンのカスタマイズ（グリーンを混ぜたグラデーション追加） */
+.stFileUploader button {
+    background: linear-gradient(90deg, #48c9b0, #3498db); /* グリーンと青のグラデーション */
+    color: white; /* テキスト色 */
+    padding: 10px 20px; /* パディング */
+    font-size: 16px; /* フォントサイズ */
+    font-family: 'Poppins', sans-serif; /* フォント */
+    border-radius: 5px; /* 角丸 */
+    cursor: pointer; /* カーソルをポインターに */
+    border: none; /* ボーダーなし */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* ボタンの影 */
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease, color 0.3s ease; /* アニメーション */
+}
+
+/* ホバー時のスタイル */
+.stFileUploader button:hover {
+    background: linear-gradient(90deg, rgba(72, 201, 176, 0.7), rgba(52, 152, 219, 0.7)); /* 透明度を加えたカバー */
+    color: #e67e22; /* テキスト色をオレンジに */
+    transform: translateY(-3px); /* 浮き上がり */
+    box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2); /* 影の強調 */
+}
+
+/* アクティブ時のスタイル */
+.stFileUploader button:active {
+    transform: translateY(-1px); /* クリック時の効果 */
+    background: linear-gradient(90deg, #2980b9, #1abc9c); /* 青とグリーンの暗めのグラデーション */
+}
+
+/* フォーカス時のスタイル */
+.stFileUploader button:focus {
+    outline: none; /* デフォルトのフォーカスリングを無効に */
+    box-shadow: 0px 0px 0px 3px rgba(52, 152, 219, 0.4); /* フォーカス時の影 */
+}
+
+/* ボタンのテキストの調整 */
+.stFileUploader button span {
+    font-weight: bold; /* テキストを太字に */
+    letter-spacing: 0.5px; /* 文字間隔を少し広く */
+}
+
+/* 変数選択ボックス（st.selectbox）のカスタマイズ */
+.stSelectbox {
+    background-color: #f0f8ff; /* より明るく目立つ背景色に設定（薄い青） */
+    color: #2c3e50; /* テキストの色 */
+    padding: 10px 15px; /* パディングでボックスを大きくする */
+    font-size: 16px; /* フォントサイズ */
+    border: 2px solid #3498db; /* 鮮やかな青色のボーダーを追加 */
+    border-radius: 5px; /* 角を丸く */
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* 軽い影を追加 */
+    transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.2s ease; /* アニメーション */
+}
+
+/* ホバー時のスタイル */
+.stSelectbox:hover {
+    background-color: #e0f7fa; /* ホバー時の背景色（淡い水色） */
+    border-color: #1abc9c; /* ボーダー色をホバー時にグリーンに変更 */
+    box-shadow: 0px 6px 15px rgba(0, 0, 0, 0.2); /* 影を強化 */
+}
+
+/* フォーカス時のスタイル */
+.stSelectbox:focus {
+    outline: none; /* フォーカスリングを無効に */
+    background-color: #d1e8e2; /* フォーカス時にさらに強調される背景色 */
+    border-color: #16a085; /* フォーカス時のボーダー色をグリーンに変更 */
+    box-shadow: 0px 0px 0px 3px rgba(22, 160, 133, 0.4); /* フォーカス時の影 */
+}
+
+/* オーバーレイを追加 */
+#overlay {
+    position: fixed;
+    display: none;  /* 初期は非表示 */
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.5);  /* 半透明の黒 */
+    z-index: 1000;
+    cursor: pointer;
+}
+
+#overlay-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 30px;
+    text-align: center;
+}
+
+/* 分析をやめるを浮かせたい */
+.fixed-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: #ffffff;
+    z-index: 9999;
+    padding: 10px 0;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.stApp {
+    margin-top: 60px;
+}
+
+
+/* バツボタンをより広くターゲットにする */
+button[title="Delete"] {
+    background-color: #e74c3c; /* ボタンの背景色を赤に */
+    color: white; /* アイコンの色を白に */
+    border-radius: 50%; /* ボタンを丸く */
+    border: none; /* ボーダーなし */
+    padding: 5px;
+    cursor: pointer;
+}
+
+/* バツボタンのホバー時のスタイル */
+button[title="Delete"]:hover {
+    background-color: #c0392b; /* ホバー時に色を少し暗く */
+    transform: scale(1.1); /* ホバー時に少し大きく */
+}
+
+#popup {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 250px;
+    background-color: #f8f9fa;
+    border: 1px solid #3498db;
+    border-radius: 10px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    z-index: 9999;
+    padding: 10px;  /* パディングを減らす */
+    box-sizing: border-box;
+}
+
+#popup-content h5 {
+    margin: 5px 0 2px;  /* 上下の余白を最小限に減らす */
+    font-family: 'Poppins', sans-serif;
+    font-size: 16px;  /* フォントサイズを少し小さく */
+    text-align: center;
+}
+
+#popup-content p {
+    font-family: 'Poppins', sans-serif;
+    font-size: 12px;  /* フォントサイズを少し小さく */
+    color: #2c3e50;
+    text-align: center;
+    margin-bottom: 10px;  /* 下の余白を少し縮める */
+}
+
+/* アイコンのスタイル */
+#popup-icon {
+    position: absolute;
+    top: -7px;
+    left: -7px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: #fff;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+
