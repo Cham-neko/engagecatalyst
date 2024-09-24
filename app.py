@@ -9,6 +9,7 @@ import plotly.express as px
 import os
 import base64
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+from wordcloud import WordCloud  # ワードクラウド作成に必要
 
 # ページ設定
 st.set_page_config(layout="wide", page_title="従業員エンゲージメント分析")
@@ -61,16 +62,38 @@ else:
 def load_csv(uploaded_file):
     if uploaded_file is not None:
         try:
+            # エンコーディング自動検出
             raw_data = uploaded_file.read()
             result = chardet.detect(raw_data)
             encoding = result['encoding']
             uploaded_file.seek(0)
+
+            # 自動検出したエンコーディングでファイルを読み込む
             df = pd.read_csv(uploaded_file, encoding=encoding)
+            if df.empty or df.columns.size == 0:
+                raise ValueError("ファイルにカラムが存在しません。フォーマットを確認してください。")
             return df
+        except UnicodeDecodeError:
+            # UTF-8で失敗した場合は、別のエンコーディングを試す
+            try:
+                uploaded_file.seek(0)
+                df = pd.read_csv(uploaded_file, encoding='utf-8')
+                if df.empty or df.columns.size == 0:
+                    raise ValueError("ファイルにカラムが存在しません。フォーマットを確認してください。")
+                return df
+            except UnicodeDecodeError:
+                try:
+                    uploaded_file.seek(0)
+                    df = pd.read_csv(uploaded_file, encoding='cp932')
+                    if df.empty or df.columns.size == 0:
+                        raise ValueError("ファイルにカラムが存在しません。フォーマットを確認してください。")
+                    return df
+                except Exception as e:
+                    raise e
         except Exception as e:
-            st.error(f"ファイルの読み込み中にエラーが発生しました: {str(e)}")
-            return None
+            raise e
     return None
+
 
 # データの前処理
 def preprocess_data(df):
@@ -121,6 +144,26 @@ def correlation_analysis(df, numeric_columns):
                  labels={'x': '変数', 'y': f'{target_var}との相関係数'},
                  title=f"{target_var}との上位{n_items}個の高相関項目（相関係数が高い項目から順に並びます）")
     st.plotly_chart(fig)
+
+# ワードクラウドの作成
+def create_wordcloud(text_column):
+    # テキストを連結して1つの文字列にする
+    text = " ".join(text_column.dropna())
+    
+    # ワードクラウドの作成（macOS向けのフォントパスを指定、またはデフォルトのフォントを使用）
+    try:
+        wordcloud = WordCloud(width=800, height=400, background_color='white', font_path='/Library/Fonts/Arial Unicode.ttf').generate(text)
+    except OSError:
+        # フォント指定で失敗した場合はデフォルトのフォントを使用
+        wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+    
+    # グラフの表示
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.imshow(wordcloud, interpolation='bilinear')
+    ax.axis("off")
+    
+    st.pyplot(fig)
+
 
 # マルチコリニアリティのチェック
 def check_multicollinearity(X):
@@ -217,7 +260,7 @@ def crosstab_analysis(df, column_x, column_y, decimal_places):
 
 def main():
     st.sidebar.title("Menu")
-    menu_items = ["データアップロード", "記述統計", "相関分析", "回帰分析", "クロス集計"]
+    menu_items = ["データアップロード", "記述統計", "相関分析", "回帰分析", "クロス集計", "ワードクラウド作成"]
 
     page = st.sidebar.selectbox("メニューを選択してください", menu_items)
 
@@ -227,22 +270,22 @@ def main():
     if page == "データアップロード":
         st.title("従業員エンゲージメント分析アプリ")
 
+       # 説明文を改行して表示
+        st.markdown("CSVファイルをアップロードしてください。<br>日本語テキストを含むデータはUTF-8形式のCSVで保存されたものを使ってください。<br>個人情報や機密情報は含めないでください。", unsafe_allow_html=True)
+        
+        
         # アップロードUIを常に表示し、新しいファイルを選択できる
-        uploaded_file = st.file_uploader("CSVファイルをアップロードしてください。個人情報や機密情報は含めないでください", type="csv")
+        uploaded_file = st.file_uploader("CSVファイルをアップロード", type="csv")
 
-        # アップロードされたファイルが新しい場合のみ処理を行う
         if uploaded_file is not None:
-            if 'uploaded_file' not in st.session_state or uploaded_file.name != st.session_state.uploaded_file_name:
-                # アップロードしたファイルをセッションに保存
-                st.session_state.uploaded_file = uploaded_file
-                st.session_state.uploaded_file_name = uploaded_file.name
-                with st.spinner('分析中...'):
+            try:
+                with st.spinner('ファイルを読み込み中...'):
                     st.session_state.df = load_csv(uploaded_file)
+                if st.session_state.df is not None:
                     st.success("ファイルが正常にアップロードされました。メニューから他のページで分析を行うことができます。")
-
-        # アップロード済みのファイルを表示
-        if 'uploaded_file' in st.session_state:
-            st.write(f"アップロードされたファイル: {st.session_state.uploaded_file_name}")
+                    st.write(f"アップロードされたファイル: {uploaded_file.name}")
+            except Exception as e:
+                st.error(f"ファイルの読み込み中にエラーが発生しました: {str(e)}")
 
     elif page == "記述統計":
         st.title("記述統計「概要を把握する」")
@@ -273,10 +316,7 @@ def main():
         if st.session_state.df is not None:
             column_y = st.selectbox("クロス集計の表頭（目的変数）を選択してください", st.session_state.df.columns)
             column_x = st.selectbox("クロス集計の表側（説明変数）を選択してください", st.session_state.df.columns)
-            # セレクトボックスに特定のIDを付与する
-            st.markdown('<div class="small-selectbox">', unsafe_allow_html=True)
             decimal_places = st.selectbox("%表の小数点の表示桁数を選択してください", [1, 2, 3, 4], index=1)
-            st.markdown('</div>', unsafe_allow_html=True)
 
             with st.spinner('分析中...'):
                 time.sleep(2)
@@ -284,7 +324,17 @@ def main():
         else:
             st.warning("データがアップロードされていません。データアップロードページでCSVファイルをアップロードしてください。")
 
+    elif page == "ワードクラウド作成":
+        st.title("ワードクラウド作成")
+        if st.session_state.df is not None:
+            text_column = st.selectbox("テキストデータを含むカラムを選んでください", st.session_state.df.columns)
+
+            if st.button("ワードクラウドを作成"):
+                with st.spinner('ワードクラウドを作成中...'):
+                    create_wordcloud(st.session_state.df[text_column])
+        else:
+            st.warning("データがアップロードされていません。データアップロードページでCSVファイルをアップロードしてください。")
+
 
 if __name__ == "__main__":
     main()
-
