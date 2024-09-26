@@ -9,7 +9,11 @@ import plotly.express as px
 import os
 import base64
 from statsmodels.stats.outliers_influence import variance_inflation_factor
-from wordcloud import WordCloud  # ワードクラウド作成に必要
+from wordcloud import WordCloud
+from janome.tokenizer import Tokenizer
+from collections import Counter  # ワードクラウド作成に必要
+from itertools import combinations
+
 
 # ページ設定
 st.set_page_config(layout="wide", page_title="従業員エンゲージメント分析")
@@ -145,17 +149,62 @@ def correlation_analysis(df, numeric_columns):
                  title=f"{target_var}との上位{n_items}個の高相関項目（相関係数が高い項目から順に並びます）")
     st.plotly_chart(fig)
 
-# ワードクラウドの作成
-def create_wordcloud(text_column):
-    # テキストを連結して1つの文字列にする
-    text = " ".join(text_column.dropna())
+# 日本語テキストのストップワードリストを作成（必要に応じて追加可能）
+stopwords = set([
+    "の", "に", "を", "は", "が", "で", "と", "た", "も", "て", "だ", "な", "い", "し", "れる", "する", "こと", "これ", "それ", "あれ"
+])
+
+# 日本語テキストのストップワードリストを作成（必要に応じて追加可能）
+stopwords = set([
+    "の", "に", "を", "は", "が", "で", "と", "た", "も", "て", "だ", "な", "い", "し", "れる", "する", "こと", "これ", "それ", "あれ"
+])
+
+# 日本語テキストのストップワードリストを作成（必要に応じて追加可能）
+stopwords = set([
+    "の", "に", "を", "は", "が", "で", "と", "た", "も", "て", "だ", "な", "い", "し", "れる", "する", "こと", "これ", "それ", "あれ"
+])
+
+ # 日本語テキストのストップワードリストを作成（不要な単語を追加）
+stopwords = set([
+        "の", "に", "を", "は", "が", "で", "と", "た", "も", "て", "だ", "な", 
+        "い", "し", "れる", "する", "こと", "これ", "それ", "あれ", "いる", "ある", "よう", "いう", "ため", "なる", "おる", "られる", "ない", "やる", "感じる", "思う", "できる", 
+    ])
+
+# ワードクラウドの作成（共起関係を考慮）
+def create_wordcloud_with_cooccurrence(text_column):
+    # テキストをすべて文字列に変換し、連結して1つの文字列にする
+    text = " ".join(text_column.dropna().astype(str))  # 数値を文字列に変換
     
-    # ワードクラウドの作成（macOS向けのフォントパスを指定、またはデフォルトのフォントを使用）
-    try:
-        wordcloud = WordCloud(width=800, height=400, background_color='white', font_path='/Library/Fonts/Arial Unicode.ttf').generate(text)
-    except OSError:
-        # フォント指定で失敗した場合はデフォルトのフォントを使用
-        wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
+    # 日本語の形態素解析を行い、名詞・動詞・形容詞を抽出
+    t = Tokenizer()
+    words = [token.base_form for token in t.tokenize(text) 
+             if token.part_of_speech.startswith(('名詞', '動詞', '形容詞'))  # 名詞、動詞、形容詞を含める
+             and len(token.base_form) > 1  # 単語の長さが1文字以上
+             and token.base_form not in stopwords]  # ストップワードに含まれていない
+
+    # 単語の共起を計算
+    window_size = 3  # 共起の範囲（例えば、3単語以内で出現するものを共起と見なす）
+    cooccurrence_pairs = []
+    
+    for i in range(len(words) - window_size + 1):
+        window = words[i:i + window_size]
+        cooccurrence_pairs.extend(combinations(window, 2))  # ペアごとの組み合わせを生成
+    
+    # 頻出単語ペアのカウント
+    cooccurrence_freq = Counter(cooccurrence_pairs)
+
+    # 重要な単語ペアを一つの「単語」として扱う
+    modified_words = words.copy()
+    for pair, freq in cooccurrence_freq.items():
+        if freq > 2:  # 出現頻度が一定以上の場合
+            # 単語ペアを結合して一つの「単語」として扱う
+            modified_words.append(f"{pair[0]}_{pair[1]}")
+
+    # 単語と単語ペアの頻出カウント
+    word_freq = Counter(modified_words)
+    
+    # ワードクラウドの作成
+    wordcloud = WordCloud(width=800, height=400, background_color='white', font_path='/Library/Fonts/Arial Unicode.ttf').generate_from_frequencies(word_freq)
     
     # グラフの表示
     fig, ax = plt.subplots(figsize=(10, 5))
@@ -163,6 +212,9 @@ def create_wordcloud(text_column):
     ax.axis("off")
     
     st.pyplot(fig)
+
+
+
 
 
 # マルチコリニアリティのチェック
@@ -324,17 +376,16 @@ def main():
         else:
             st.warning("データがアップロードされていません。データアップロードページでCSVファイルをアップロードしてください。")
 
+    # ワードクラウド作成
     elif page == "ワードクラウド作成":
         st.title("ワードクラウド作成")
         if st.session_state.df is not None:
             text_column = st.selectbox("テキストデータを含むカラムを選んでください", st.session_state.df.columns)
-
             if st.button("ワードクラウドを作成"):
                 with st.spinner('ワードクラウドを作成中...'):
-                    create_wordcloud(st.session_state.df[text_column])
+                    create_wordcloud_with_cooccurrence(st.session_state.df[text_column])
         else:
             st.warning("データがアップロードされていません。データアップロードページでCSVファイルをアップロードしてください。")
-
 
 if __name__ == "__main__":
     main()
