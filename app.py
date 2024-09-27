@@ -9,6 +9,11 @@ import plotly.express as px
 import os
 import base64
 from statsmodels.stats.outliers_influence import variance_inflation_factor
+from wordcloud import WordCloud
+from janome.tokenizer import Tokenizer
+from collections import Counter  # ワードクラウド作成に必要
+from itertools import combinations
+
 
 # ページ設定
 st.set_page_config(layout="wide", page_title="従業員エンゲージメント分析")
@@ -61,16 +66,38 @@ else:
 def load_csv(uploaded_file):
     if uploaded_file is not None:
         try:
+            # エンコーディング自動検出
             raw_data = uploaded_file.read()
             result = chardet.detect(raw_data)
             encoding = result['encoding']
             uploaded_file.seek(0)
+
+            # 自動検出したエンコーディングでファイルを読み込む
             df = pd.read_csv(uploaded_file, encoding=encoding)
+            if df.empty or df.columns.size == 0:
+                raise ValueError("ファイルにカラムが存在しません。フォーマットを確認してください。")
             return df
+        except UnicodeDecodeError:
+            # UTF-8で失敗した場合は、別のエンコーディングを試す
+            try:
+                uploaded_file.seek(0)
+                df = pd.read_csv(uploaded_file, encoding='utf-8')
+                if df.empty or df.columns.size == 0:
+                    raise ValueError("ファイルにカラムが存在しません。フォーマットを確認してください。")
+                return df
+            except UnicodeDecodeError:
+                try:
+                    uploaded_file.seek(0)
+                    df = pd.read_csv(uploaded_file, encoding='cp932')
+                    if df.empty or df.columns.size == 0:
+                        raise ValueError("ファイルにカラムが存在しません。フォーマットを確認してください。")
+                    return df
+                except Exception as e:
+                    raise e
         except Exception as e:
-            st.error(f"ファイルの読み込み中にエラーが発生しました: {str(e)}")
-            return None
+            raise e
     return None
+
 
 # データの前処理
 def preprocess_data(df):
@@ -121,6 +148,74 @@ def correlation_analysis(df, numeric_columns):
                  labels={'x': '変数', 'y': f'{target_var}との相関係数'},
                  title=f"{target_var}との上位{n_items}個の高相関項目（相関係数が高い項目から順に並びます）")
     st.plotly_chart(fig)
+
+# 日本語テキストのストップワードリストを作成（必要に応じて追加可能）
+stopwords = set([
+    "の", "に", "を", "は", "が", "で", "と", "た", "も", "て", "だ", "な", "い", "し", "れる", "する", "こと", "これ", "それ", "あれ"
+])
+
+# 日本語テキストのストップワードリストを作成（必要に応じて追加可能）
+stopwords = set([
+    "の", "に", "を", "は", "が", "で", "と", "た", "も", "て", "だ", "な", "い", "し", "れる", "する", "こと", "これ", "それ", "あれ"
+])
+
+# 日本語テキストのストップワードリストを作成（必要に応じて追加可能）
+stopwords = set([
+    "の", "に", "を", "は", "が", "で", "と", "た", "も", "て", "だ", "な", "い", "し", "れる", "する", "こと", "これ", "それ", "あれ"
+])
+
+ # 日本語テキストのストップワードリストを作成（不要な単語を追加）
+stopwords = set([
+        "の", "に", "を", "は", "が", "で", "と", "た", "も", "て", "だ", "な", 
+        "い", "し", "れる", "する", "こと", "これ", "それ", "あれ", "いる", "ある", "よう", "いう", "ため", "なる", "おる", "られる", "ない", "やる", "感じる", "思う", "できる", 
+    ])
+
+# ワードクラウドの作成（共起関係を考慮）
+def create_wordcloud_with_cooccurrence(text_column):
+    # テキストをすべて文字列に変換し、連結して1つの文字列にする
+    text = " ".join(text_column.dropna().astype(str))  # 数値を文字列に変換
+    
+    # 日本語の形態素解析を行い、名詞・動詞・形容詞を抽出
+    t = Tokenizer()
+    words = [token.base_form for token in t.tokenize(text) 
+             if token.part_of_speech.startswith(('名詞', '動詞', '形容詞'))  # 名詞、動詞、形容詞を含める
+             and len(token.base_form) > 1  # 単語の長さが1文字以上
+             and token.base_form not in stopwords]  # ストップワードに含まれていない
+
+    # 単語の共起を計算
+    window_size = 3  # 共起の範囲（例えば、3単語以内で出現するものを共起と見なす）
+    cooccurrence_pairs = []
+    
+    for i in range(len(words) - window_size + 1):
+        window = words[i:i + window_size]
+        cooccurrence_pairs.extend(combinations(window, 2))  # ペアごとの組み合わせを生成
+    
+    # 頻出単語ペアのカウント
+    cooccurrence_freq = Counter(cooccurrence_pairs)
+
+    # 重要な単語ペアを一つの「単語」として扱う
+    modified_words = words.copy()
+    for pair, freq in cooccurrence_freq.items():
+        if freq > 2:  # 出現頻度が一定以上の場合
+            # 単語ペアを結合して一つの「単語」として扱う
+            modified_words.append(f"{pair[0]}_{pair[1]}")
+
+    # 単語と単語ペアの頻出カウント
+    word_freq = Counter(modified_words)
+    
+    # ワードクラウドの作成
+    wordcloud = WordCloud(width=800, height=400, background_color='white', font_path='/Library/Fonts/Arial Unicode.ttf').generate_from_frequencies(word_freq)
+    
+    # グラフの表示
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.imshow(wordcloud, interpolation='bilinear')
+    ax.axis("off")
+    
+    st.pyplot(fig)
+
+
+
+
 
 # マルチコリニアリティのチェック
 def check_multicollinearity(X):
@@ -244,7 +339,8 @@ def crosstab_analysis(df, column_x, column_y, decimal_places):
 
 def main():
     st.sidebar.title("Menu")
-    menu_items = ["データアップロード", "記述統計", "相関分析", "回帰分析", "クロス集計", "変数の加工"]  # メニューに「変数の加工」を追加
+
+    menu_items = ["データアップロード", "記述統計", "相関分析", "回帰分析", "クロス集計",  "ワードクラウド作成", "変数の加工"]  # メニューに「変数の加工」を追加
 
     page = st.sidebar.selectbox("メニューを選択してください", menu_items)
 
@@ -254,22 +350,22 @@ def main():
     if page == "データアップロード":
         st.title("従業員エンゲージメント分析アプリ")
 
+       # 説明文を改行して表示
+        st.markdown("CSVファイルをアップロードしてください。<br>日本語テキストを含むデータはUTF-8形式のCSVで保存されたものを使ってください。<br>個人情報や機密情報は含めないでください。", unsafe_allow_html=True)
+        
+        
         # アップロードUIを常に表示し、新しいファイルを選択できる
-        uploaded_file = st.file_uploader("CSVファイルをアップロードしてください。個人情報や機密情報は含めないでください", type="csv")
+        uploaded_file = st.file_uploader("CSVファイルをアップロード", type="csv")
 
-        # アップロードされたファイルが新しい場合のみ処理を行う
         if uploaded_file is not None:
-            if 'uploaded_file' not in st.session_state or uploaded_file.name != st.session_state.uploaded_file_name:
-                # アップロードしたファイルをセッションに保存
-                st.session_state.uploaded_file = uploaded_file
-                st.session_state.uploaded_file_name = uploaded_file.name
-                with st.spinner('分析中...'):
+            try:
+                with st.spinner('ファイルを読み込み中...'):
                     st.session_state.df = load_csv(uploaded_file)
+                if st.session_state.df is not None:
                     st.success("ファイルが正常にアップロードされました。メニューから他のページで分析を行うことができます。")
-
-        # アップロード済みのファイルを表示
-        if 'uploaded_file' in st.session_state:
-            st.write(f"アップロードされたファイル: {st.session_state.uploaded_file_name}")
+                    st.write(f"アップロードされたファイル: {uploaded_file.name}")
+            except Exception as e:
+                st.error(f"ファイルの読み込み中にエラーが発生しました: {str(e)}")
 
     elif page == "記述統計":
         st.title("記述統計「概要を把握する」")
@@ -307,10 +403,7 @@ def main():
         if st.session_state.df is not None:
             column_y = st.selectbox("クロス集計の表頭（目的変数）を選択してください", st.session_state.df.columns)
             column_x = st.selectbox("クロス集計の表側（説明変数）を選択してください", st.session_state.df.columns)
-            # セレクトボックスに特定のIDを付与する
-            st.markdown('<div class="small-selectbox">', unsafe_allow_html=True)
             decimal_places = st.selectbox("%表の小数点の表示桁数を選択してください", [1, 2, 3, 4], index=1)
-            st.markdown('</div>', unsafe_allow_html=True)
 
             with st.spinner('分析中...'):
                 time.sleep(2)
@@ -318,7 +411,16 @@ def main():
         else:
             st.warning("データがアップロードされていません。データアップロードページでCSVファイルをアップロードしてください。")
 
+    # ワードクラウド作成
+    elif page == "ワードクラウド作成":
+        st.title("ワードクラウド作成")
+        if st.session_state.df is not None:
+            text_column = st.selectbox("テキストデータを含むカラムを選んでください", st.session_state.df.columns)
+            if st.button("ワードクラウドを作成"):
+                with st.spinner('ワードクラウドを作成中...'):
+                    create_wordcloud_with_cooccurrence(st.session_state.df[text_column])
+        else:
+            st.warning("データがアップロードされていません。データアップロードページでCSVファイルをアップロードしてください。")
 
 if __name__ == "__main__":
     main()
-
