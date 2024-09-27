@@ -262,6 +262,33 @@ def regression_analysis(df, numeric_columns):
     st.markdown(f"<p>切片: {model.intercept_:.4f}</p>", unsafe_allow_html=True)
     st.markdown(f"<p>決定係数 (<span style='color:red; font-weight:bold;'>R²: {r_squared:.4f}</span>)　0.5以上で中程度以上の因果関係があると言えます</p>", unsafe_allow_html=True)
 
+# 変数の加工
+def variable_processing(df):
+    st.subheader("変数の加工")
+    numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
+    selected_columns = st.multiselect("加工対象の変数を選択してください", numeric_columns)
+
+    if len(selected_columns) > 0:
+        # 選択された変数の平均を計算
+        average_of_columns = df[selected_columns].mean(axis=1)
+
+        # 平均の分布を表示
+        st.write("選択された変数の平均の分布")
+        fig = px.histogram(average_of_columns, title="平均の分布")
+        st.plotly_chart(fig)
+
+        # 分析データに追加するボタン
+        if 'new_column_name' not in st.session_state:
+            st.session_state.new_column_name = ""
+
+        new_column_name = st.text_input("新しい変数名を入力してください", value=st.session_state.new_column_name)
+        if st.button("分析データに追加する"):
+            if new_column_name:
+                df[new_column_name] = average_of_columns
+                st.session_state.df = df
+                st.session_state.new_column_name = new_column_name  # 入力値をセッションに保存
+                st.success("分析データに追加しました。")
+
 # クロス集計の実行
 @st.cache_data
 def crosstab_analysis(df, column_x, column_y, decimal_places):
@@ -312,7 +339,8 @@ def crosstab_analysis(df, column_x, column_y, decimal_places):
 
 def main():
     st.sidebar.title("Menu")
-    menu_items = ["データアップロード", "記述統計", "相関分析", "回帰分析", "クロス集計", "ワードクラウド作成"]
+
+    menu_items = ["データアップロード", "記述統計", "相関分析", "回帰分析", "クロス集計",  "ワードクラウド作成", "変数の加工"]  # メニューに「変数の加工」を追加
 
     page = st.sidebar.selectbox("メニューを選択してください", menu_items)
 
@@ -362,6 +390,13 @@ def main():
             regression_analysis(df, numeric_columns)
         else:
             st.warning("データがアップロードされていません。データアップロードページでCSVファイルをアップロードしてください。")
+
+    elif page == "変数の加工":
+        st.title("変数の加工")
+        if st.session_state.df is not None:
+            variable_processing(st.session_state.df)
+        else:
+            st.warning("データがアップロードされていません。データアップロードページでCSVファイルをアップロードしてください。")      
 
     elif page == "クロス集計":
         st.title("クロス集計「群ごとの傾向の違いを見る」")
