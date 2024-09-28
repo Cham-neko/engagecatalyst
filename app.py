@@ -47,7 +47,7 @@ def display_popup(image_base64):
         <img src="data:image/png;base64,{image_base64}" id="popup-icon" alt="robot icon">
         <div id="popup-content">
             <h5>HELP</h5>
-            <p>データの解釈に困ったり、調査設計や分析の相談は<a href="https://example.com">こちら</a>からどうぞ！</p>
+            <p>データの解釈に困ったり、調査設計や分析の相談は<a href="https://whitebank.site">こちら</a>からどうぞ！</p>
         </div>
     </div>
     """
