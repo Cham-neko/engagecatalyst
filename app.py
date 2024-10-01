@@ -170,7 +170,6 @@ stopwords = set([
         "い", "し", "れる", "する", "こと", "これ", "それ", "あれ", "いる", "ある", "よう", "いう", "ため", "なる", "おる", "られる", "ない", "やる", "感じる", "思う", "できる", 
     ])
 
-# ワードクラウドの作成（共起関係を考慮）
 def create_wordcloud_with_cooccurrence(text_column):
     # テキストをすべて文字列に変換し、連結して1つの文字列にする
     text = " ".join(text_column.dropna().astype(str))  # 数値を文字列に変換
@@ -182,29 +181,73 @@ def create_wordcloud_with_cooccurrence(text_column):
              and len(token.base_form) > 1  # 単語の長さが1文字以上
              and token.base_form not in stopwords]  # ストップワードに含まれていない
 
-    # 単語の共起を計算
-    window_size = 3  # 共起の範囲（例えば、3単語以内で出現するものを共起と見なす）
+    # 特定のキーワードに関連する単語ペアを強調する
+    focus_keywords = ["組織", "風土", "文化", "制度"]  # 注目するキーワード
     cooccurrence_pairs = []
     
+    # 共起関係を計算
+    window_size = 3  # 共起の範囲
     for i in range(len(words) - window_size + 1):
         window = words[i:i + window_size]
         cooccurrence_pairs.extend(combinations(window, 2))  # ペアごとの組み合わせを生成
     
     # 頻出単語ペアのカウント
     cooccurrence_freq = Counter(cooccurrence_pairs)
-
-    # 重要な単語ペアを一つの「単語」として扱う
+    
+    # 重要な単語ペアを一つの「単語」として扱う（特定のキーワードが含まれるものを優先）
     modified_words = words.copy()
     for pair, freq in cooccurrence_freq.items():
         if freq > 2:  # 出現頻度が一定以上の場合
-            # 単語ペアを結合して一つの「単語」として扱う
-            modified_words.append(f"{pair[0]}_{pair[1]}")
+            if pair[0] in focus_keywords or pair[1] in focus_keywords:
+                # 単語ペアを結合して一つの「単語」として扱う
+                modified_words.append(f"{pair[0]}_{pair[1]}")
 
     # 単語と単語ペアの頻出カウント
     word_freq = Counter(modified_words)
     
     # ワードクラウドの作成
     wordcloud = WordCloud(width=800, height=400, background_color='white', font_path='/Library/Fonts/Arial Unicode.ttf').generate_from_frequencies(word_freq)
+    
+    # グラフの表示
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.imshow(wordcloud, interpolation='bilinear')
+    ax.axis("off")
+    
+    st.pyplot(fig)
+
+
+# サンプルでの感情分析の適用（感情分析を視覚的に取り入れる場合の例）
+def sentiment_analysis_for_wordcloud(text_column):
+    # テキストをすべて文字列に変換し、連結して1つの文字列にする
+    text = " ".join(text_column.dropna().astype(str))
+    
+    # 日本語の形態素解析と同時に、簡易的な感情分析（例: ポジティブ・ネガティブな単語のカウント）を導入
+    positive_words = ["改善", "効率", "向上", "成功", "成長"]
+    negative_words = ["課題", "問題", "障害", "低下", "減少"]
+
+    # 感情ラベルの付与
+    positive_count = 0
+    negative_count = 0
+
+    # 形態素解析を行い、ポジティブ・ネガティブな単語のカウント
+    t = Tokenizer()
+    for token in t.tokenize(text):
+        base_form = token.base_form
+        if base_form in positive_words:
+            positive_count += 1
+        elif base_form in negative_words:
+            negative_count += 1
+    
+    # 感情スコアを表示
+    st.write(f"ポジティブ単語数: {positive_count}")
+    st.write(f"ネガティブ単語数: {negative_count}")
+
+    # 結果に基づいてワードクラウドを作成する（ポジティブ・ネガティブに応じて色を変えるなど）
+    # ここでは簡易な例として、ポジティブが多い場合は青、ネガティブが多い場合は赤のワードクラウドを表示
+    cloud_color = 'blue' if positive_count > negative_count else 'red'
+
+    # ワードクラウドの作成
+    wordcloud = WordCloud(width=800, height=400, background_color='white', colormap=cloud_color, font_path='/Library/Fonts/Arial Unicode.ttf').generate(text)
     
     # グラフの表示
     fig, ax = plt.subplots(figsize=(10, 5))
