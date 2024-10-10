@@ -306,19 +306,56 @@ def regression_analysis(df, numeric_columns):
     st.markdown(f"<p>決定係数 (<span style='color:red; font-weight:bold;'>R²: {r_squared:.4f}</span>)　0.5以上で中程度以上の因果関係があると言えます</p>", unsafe_allow_html=True)
 
 # 変数の加工
+# 変数の加工における再分類機能の追加
 def variable_processing(df):
     st.subheader("変数の加工")
     numeric_columns = df.select_dtypes(include=[np.number]).columns.tolist()
-    selected_columns = st.multiselect("加工対象の変数を選択してください", numeric_columns)
+    selected_column = st.selectbox("再分類する変数を選択してください", numeric_columns)
 
-    if len(selected_columns) > 0:
-        # 選択された変数の平均を計算
-        average_of_columns = df[selected_columns].mean(axis=1)
+    if selected_column:
+        unique_values = sorted(df[selected_column].dropna().unique())  # NaNは無視
 
-        # 平均の分布を表示
-        st.write("選択された変数の平均の分布")
-        fig = px.histogram(average_of_columns, title="平均の分布")
-        st.plotly_chart(fig)
+        # ユニークな値をリストで表示し、何が入っているかをわかりやすく表示
+        st.write("**ユニークな値の一覧**")
+        unique_table = pd.DataFrame({"ユニークな値": unique_values}).reset_index(drop=True)  # インデックスをリセットして表示しない
+        st.dataframe(unique_table, hide_index=True)
+
+        # ユニークな値がすべて整数かどうかを確認し、整数でなければステップを浮動小数点に設定
+        if all(float(val).is_integer() for val in unique_values):
+            min_val = int(min(unique_values))
+            max_val = int(max(unique_values))
+            step = 1
+        else:
+            min_val = float(min(unique_values))
+            max_val = float(max(unique_values))
+            step = (max_val - min_val) / 100  # スライダーのステップを調整
+
+        num_bins = st.number_input("分類するグループ数を指定してください", min_value=2, max_value=len(unique_values), value=2)
+        
+        # 範囲を指定するためのリストを作成（例：1-3, 4, 5）
+        bin_labels = []
+        for i in range(num_bins):
+            bin_range = st.slider(f"グループ {i+1} の範囲を指定してください", min_value=min_val, max_value=max_val, value=(min_val, max_val), step=step, format="%f")
+            bin_labels.append(bin_range)
+
+        # グループ名の設定
+        group_labels = [f"グループ {i+1}" for i in range(num_bins)]
+
+        # 加工後のデータの表形式でのプレビュー
+        if st.button("再分類を実行"):
+            bins = [min_val] + [r[1] for r in bin_labels]  # スライダーの上限値を使って区切る
+            try:
+                df[f"{selected_column}_reclassified"] = pd.cut(df[selected_column], bins=bins, labels=group_labels, include_lowest=True)
+                st.success(f"{selected_column}が再分類されました。")
+
+                # 再分類後の変数を元の変数と一緒に表示
+                reclassified_data = pd.DataFrame({
+                    "加工前の変数": df[selected_column],
+                    "加工後の変数": df[f"{selected_column}_reclassified"]
+                }).dropna()
+
+            except ValueError as e:
+                st.error(f"再分類に失敗しました: {e}")
 
         # 分析データに追加するボタン
         if 'new_column_name' not in st.session_state:
@@ -327,10 +364,11 @@ def variable_processing(df):
         new_column_name = st.text_input("新しい変数名を入力してください", value=st.session_state.new_column_name)
         if st.button("分析データに追加する"):
             if new_column_name:
-                df[new_column_name] = average_of_columns
+                df[new_column_name] = df[f"{selected_column}_reclassified"]
                 st.session_state.df = df
                 st.session_state.new_column_name = new_column_name  # 入力値をセッションに保存
                 st.success("分析データに追加しました。")
+
 
 # クロス集計の実行
 @st.cache_data
