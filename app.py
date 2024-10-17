@@ -385,10 +385,10 @@ def crosstab_analysis(df, column_x, column_y, decimal_places):
         st.write("")
         st.write("")
         st.write("")
-        st.write(f"説明変数（表側）: {column_x}")
+        st.write(f"説明変数（表側）: {column_y}")
 
     with col2:
-        st.write(f"クロス集計結果【数表】　目的変数（表頭: {column_y}）")
+        st.write(f"クロス集計結果【数表】　目的変数（表頭: {column_x}）")
         crosstab_with_labels = crosstab.copy()
         crosstab_with_labels.index.name = f"{column_y}"
         crosstab_with_labels.columns.name = f"{column_x}"
@@ -407,10 +407,10 @@ def crosstab_analysis(df, column_x, column_y, decimal_places):
         st.write("")
         st.write("")
         st.write("")
-        st.write(f"説明変数（表側）: {column_x}")
+        st.write(f"説明変数（表側）: {column_y}")
 
     with col2:
-        st.write(f"クロス集計結果【%表】　目的変数（表頭: {column_y}）")
+        st.write(f"クロス集計結果【%表】　目的変数（表頭: {column_x}）")
         crosstab_percent_with_labels = crosstab_percent.copy()
         crosstab_percent_with_labels.index.name = f"{column_y}"
         crosstab_percent_with_labels.columns.name = f"{column_x}"
