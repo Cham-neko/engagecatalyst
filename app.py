@@ -421,7 +421,7 @@ def crosstab_analysis(df, column_x, column_y, decimal_places):
 def main():
     st.sidebar.title("Menu")
 
-    menu_items = ["データアップロード", "記述統計", "相関分析", "回帰分析", "クロス集計",  "ワードクラウド作成", "変数の加工"]  # メニューに「変数の加工」を追加
+    menu_items = ["データアップロード", "記述統計", "変数の加工", "クロス集計", "相関分析", "回帰分析", "ワードクラウド作成"]  # メニューに「変数の加工」を追加
 
     page = st.sidebar.selectbox("メニューを選択してください", menu_items)
 
