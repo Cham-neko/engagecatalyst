@@ -154,17 +154,7 @@ stopwords = set([
     "の", "に", "を", "は", "が", "で", "と", "た", "も", "て", "だ", "な", "い", "し", "れる", "する", "こと", "これ", "それ", "あれ"
 ])
 
-# 日本語テキストのストップワードリストを作成（必要に応じて追加可能）
-stopwords = set([
-    "の", "に", "を", "は", "が", "で", "と", "た", "も", "て", "だ", "な", "い", "し", "れる", "する", "こと", "これ", "それ", "あれ"
-])
-
-# 日本語テキストのストップワードリストを作成（必要に応じて追加可能）
-stopwords = set([
-    "の", "に", "を", "は", "が", "で", "と", "た", "も", "て", "だ", "な", "い", "し", "れる", "する", "こと", "これ", "それ", "あれ"
-])
-
- # 日本語テキストのストップワードリストを作成（不要な単語を追加）
+# 日本語テキストのストップワードリストを作成（不要な単語を追加）
 stopwords = set([
         "の", "に", "を", "は", "が", "で", "と", "た", "も", "て", "だ", "な", 
         "い", "し", "れる", "する", "こと", "これ", "それ", "あれ", "いる", "ある", "よう", "いう", "ため", "なる", "おる", "られる", "ない", "やる", "感じる", "思う", "できる", 
@@ -433,7 +423,6 @@ def crosstab_analysis(df, column_x, column_y, decimal_places):
         st.dataframe(crosstab_percent_with_labels.round(decimal_places))
 
 
-
 def main():
     st.sidebar.title("Menu")
 
@@ -443,29 +432,33 @@ def main():
 
     if 'df' not in st.session_state:
         st.session_state.df = None
+    if 'uploaded_file_name' not in st.session_state:
+        st.session_state.uploaded_file_name = None
 
     if page == "データアップロード":
         # サービス名をページ上部に表示
         st.title("Smart Matrics")
         st.markdown("<h3 style='text-align: center;'>従業員サーベイなどアンケートデータの分析ツールです。</h3>", unsafe_allow_html=True)
 
-       # 説明文を改行して表示
+        # 説明文を改行して表示
         st.markdown("<br><br>CSVファイルをアップロードしてください。<br>個人情報や機密情報は含めないでください。<br>日本語テキストを含むデータでワードクラウドを作成する場合はUTF-8形式のCSVで保存されたものを使ってください。<br>", unsafe_allow_html=True)
-        
-        
-        # アップロードUIを常に表示し、新しいファイルを選択できる
-        uploaded_file = st.file_uploader("CSVファイルをアップロード", type="csv")
 
-        if uploaded_file is not None:
-            try:
-                with st.spinner('ファイルを読み込み中...'):
-                    st.session_state.df = load_csv(uploaded_file)
-                if st.session_state.df is not None:
-                    st.success("ファイルが正常にアップロードされました。メニューから他のページで分析を行うことができます。")
-                    st.write(f"アップロードされたファイル: {uploaded_file.name}")
-            except Exception as e:
-                st.error(f"ファイルの読み込み中にエラーが発生しました: {str(e)}")
+        # すでにアップロードされたファイルがある場合、その名前を表示しつつ、新しいファイルのアップロードも可能にする
+        if st.session_state.df is not None:
+            st.write(f"現在アップロードされているファイル: {st.session_state.uploaded_file_name}")
+            uploaded_file = st.file_uploader("新しいCSVファイルをアップロード", type="csv")
+            if uploaded_file is not None:
+                st.session_state.df = load_csv(uploaded_file)
+                st.session_state.uploaded_file_name = uploaded_file.name
+                st.success(f"新しいファイルがアップロードされました: {uploaded_file.name}")
+        else:
+            uploaded_file = st.file_uploader("CSVファイルをアップロード", type="csv")
+            if uploaded_file is not None:
+                st.session_state.df = load_csv(uploaded_file)
+                st.session_state.uploaded_file_name = uploaded_file.name
+                st.success(f"ファイルが正常にアップロードされました: {uploaded_file.name}")
 
+    # 他のページに移動してもデータを保持する処理
     elif page == "記述統計":
         st.title("記述統計「概要を把握する」")
         if st.session_state.df is not None:
