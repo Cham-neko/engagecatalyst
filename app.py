@@ -316,7 +316,7 @@ def variable_processing(df):
         unique_values = sorted(df[selected_column].dropna().unique())  # NaNは無視
 
         # ユニークな値をリストで表示し、何が入っているかをわかりやすく表示
-        st.write("**ユニークな値の一覧**")
+        st.write("**選択肢の値の一覧**")
         unique_table = pd.DataFrame({"ユニークな値": unique_values}).reset_index(drop=True)  # インデックスをリセットして表示しない
         st.dataframe(unique_table, hide_index=True)
 
@@ -330,12 +330,12 @@ def variable_processing(df):
             max_val = float(max(unique_values))
             step = (max_val - min_val) / 100  # スライダーのステップを調整
 
-        num_bins = st.number_input("分類するグループ数を指定してください", min_value=2, max_value=len(unique_values), value=2)
+        num_bins = st.number_input("分類するグループ（群）の数を指定してください", min_value=2, max_value=len(unique_values), value=2)
         
         # 範囲を指定するためのリストを作成（例：1-3, 4, 5）
         bin_labels = []
         for i in range(num_bins):
-            bin_range = st.slider(f"グループ {i+1} の範囲を指定してください", min_value=min_val, max_value=max_val, value=(min_val, max_val), step=step, format="%f")
+            bin_range = st.slider(f"グループ {i+1} の範囲（どの選択肢の値をまとめるか）を指定してください", min_value=min_val, max_value=max_val, value=(min_val, max_val), step=step, format="%f")
             bin_labels.append(bin_range)
 
         # グループ名の設定
@@ -361,18 +361,18 @@ def variable_processing(df):
         if 'new_column_name' not in st.session_state:
             st.session_state.new_column_name = ""
 
-        new_column_name = st.text_input("新しい変数名を入力してください", value=st.session_state.new_column_name)
+        new_column_name = st.text_input("分類した新しい変数名を入力してください", value=st.session_state.new_column_name)
         if st.button("分析データに追加する"):
             if new_column_name:
                 df[new_column_name] = df[f"{selected_column}_reclassified"]
                 st.session_state.df = df
                 st.session_state.new_column_name = new_column_name  # 入力値をセッションに保存
-                st.success("分析データに追加しました。")
+                st.success("分析データに追加しました。分析の変数選択の際、末尾に表示されます。")
 
 
 # クロス集計の実行
 @st.cache_data
-def crosstab_analysis(df, column_x, column_y, decimal_places):
+def crosstab_analysis(df, column_x, column_y, decimal_places):  # 関数の引数として渡す
     # クロス集計の計算（目的変数を行、説明変数を列として設定）
     crosstab = pd.crosstab(df[column_y], df[column_x])
 
@@ -387,11 +387,15 @@ def crosstab_analysis(df, column_x, column_y, decimal_places):
         st.write("")
         st.write(f"説明変数（表側）: {column_y}")
 
+        
+
     with col2:
         st.write(f"クロス集計結果【数表】　目的変数（表頭: {column_x}）")
         crosstab_with_labels = crosstab.copy()
-        crosstab_with_labels.index.name = f"{column_y}"
-        crosstab_with_labels.columns.name = f"{column_x}"
+        
+        # 行と列のラベル名を削除
+        crosstab_with_labels.index.name = None
+        crosstab_with_labels.columns.name = None
 
         # クロス集計結果を整数にキャストして表示
         crosstab_with_labels = crosstab_with_labels.astype(int)
@@ -409,14 +413,19 @@ def crosstab_analysis(df, column_x, column_y, decimal_places):
         st.write("")
         st.write(f"説明変数（表側）: {column_y}")
 
+      
+
     with col2:
         st.write(f"クロス集計結果【%表】　目的変数（表頭: {column_x}）")
         crosstab_percent_with_labels = crosstab_percent.copy()
-        crosstab_percent_with_labels.index.name = f"{column_y}"
-        crosstab_percent_with_labels.columns.name = f"{column_x}"
+        
+        # 行と列のラベル名を削除
+        crosstab_percent_with_labels.index.name = None
+        crosstab_percent_with_labels.columns.name = None
 
         # 選択された小数点位数で丸めて表示
         st.dataframe(crosstab_percent_with_labels.round(decimal_places))
+
 
 def main():
     st.sidebar.title("Menu")
@@ -473,7 +482,7 @@ def main():
             st.warning("データがアップロードされていません。データアップロードページでCSVファイルをアップロードしてください。")
 
     elif page == "変数の加工":
-        st.title("変数の加工")
+        st.title("変数の加工（変数をまとめて群分けする）")
         if st.session_state.df is not None:
             variable_processing(st.session_state.df)
         else:
@@ -482,9 +491,9 @@ def main():
     elif page == "クロス集計":
         st.title("クロス集計「群ごとの傾向の違いを見る」")
         if st.session_state.df is not None:
-            column_y = st.selectbox("クロス集計の表頭（目的変数）を選択してください", st.session_state.df.columns)
-            column_x = st.selectbox("クロス集計の表側（説明変数）を選択してください", st.session_state.df.columns)
-            decimal_places = st.selectbox("%表の小数点の表示桁数を選択してください", [1, 2, 3, 4], index=1)
+            column_y = st.selectbox("クロス集計の表側（説明変数）を選択してください", st.session_state.df.columns)
+            column_x = st.selectbox("クロス集計の表頭（目的変数）を選択してください", st.session_state.df.columns)
+            decimal_places = st.selectbox("%表の小数点の表示桁数を選択してください", [1, 2, 3, 4], index=0)
 
             with st.spinner('分析中...'):
                 time.sleep(2)
