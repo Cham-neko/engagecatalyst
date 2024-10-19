@@ -11,6 +11,15 @@ h1,h5 {
     margin-bottom: 20px;
 }
 
+h3 {
+    text-align: center;
+    background: -webkit-linear-gradient(45deg, #6a11cb, #2575fc);
+    -webkit-background-clip: text;
+    color: transparent;
+    font-weight: bold;
+    font-size: 24px;
+}
+
 h5 {
     margin: 10px 0 0; /* 上に余白を追加 */
     font-size: 20px;

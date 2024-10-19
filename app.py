@@ -16,7 +16,7 @@ from itertools import combinations
 
 
 # ページ設定
-st.set_page_config(layout="wide", page_title="従業員エンゲージメント分析")
+st.set_page_config(layout="wide", page_title="従業員サーベイデータ分析")
 
 # CSSでデザインをカスタマイズ
 def load_css(file_name):
@@ -139,7 +139,7 @@ def correlation_analysis(df, numeric_columns):
     
     st.subheader("特定の変数との高相関項目")
     target_var = st.selectbox("分析する変数を選択してください", numeric_columns)
-    n_items = st.slider("表示する項目数", min_value=1, max_value=len(numeric_columns)-1, value=5)
+    n_items = st.slider("下に表示する項目数", min_value=1, max_value=len(numeric_columns)-1, value=5)
     
     correlations = corr_matrix[target_var].abs().sort_values(ascending=False)
     top_correlations = correlations[correlations.index != target_var][:n_items]
@@ -372,7 +372,17 @@ def variable_processing(df):
 
 # クロス集計の実行
 @st.cache_data
-def crosstab_analysis(df, column_x, column_y, decimal_places):  # 関数の引数として渡す
+def crosstab_analysis(df, column_x, column_y, decimal_places):
+    # 再分類された変数が存在するかを確認
+    if f"{column_y}_reclassified" in df.columns:
+        # 再分類された変数を使用してクロス集計を実行
+        column_y = f"{column_y}_reclassified"
+        st.write(f"変数 {column_y} が再分類されました。")
+    if f"{column_x}_reclassified" in df.columns:
+        # 再分類された変数を使用してクロス集計を実行
+        column_x = f"{column_x}_reclassified"
+        st.write(f"変数 {column_x} が再分類されました。")
+    
     # クロス集計の計算（目的変数を行、説明変数を列として設定）
     crosstab = pd.crosstab(df[column_y], df[column_x])
 
@@ -387,12 +397,10 @@ def crosstab_analysis(df, column_x, column_y, decimal_places):  # 関数の引�
         st.write("")
         st.write(f"説明変数（表側）: {column_y}")
 
-        
-
     with col2:
         st.write(f"クロス集計結果【数表】　目的変数（表頭: {column_x}）")
         crosstab_with_labels = crosstab.copy()
-        
+
         # 行と列のラベル名を削除
         crosstab_with_labels.index.name = None
         crosstab_with_labels.columns.name = None
@@ -413,18 +421,17 @@ def crosstab_analysis(df, column_x, column_y, decimal_places):  # 関数の引�
         st.write("")
         st.write(f"説明変数（表側）: {column_y}")
 
-      
-
     with col2:
         st.write(f"クロス集計結果【%表】　目的変数（表頭: {column_x}）")
         crosstab_percent_with_labels = crosstab_percent.copy()
-        
+
         # 行と列のラベル名を削除
         crosstab_percent_with_labels.index.name = None
         crosstab_percent_with_labels.columns.name = None
 
         # 選択された小数点位数で丸めて表示
         st.dataframe(crosstab_percent_with_labels.round(decimal_places))
+
 
 
 def main():
@@ -438,10 +445,12 @@ def main():
         st.session_state.df = None
 
     if page == "データアップロード":
-        st.title("従業員エンゲージメント分析アプリ")
+        # サービス名をページ上部に表示
+        st.title("Smart Matrics")
+        st.markdown("<h3 style='text-align: center;'>従業員サーベイなどアンケートデータの分析ツールです。</h3>", unsafe_allow_html=True)
 
        # 説明文を改行して表示
-        st.markdown("CSVファイルをアップロードしてください。<br>日本語テキストを含むデータはUTF-8形式のCSVで保存されたものを使ってください。<br>個人情報や機密情報は含めないでください。", unsafe_allow_html=True)
+        st.markdown("<br><br>CSVファイルをアップロードしてください。<br>個人情報や機密情報は含めないでください。<br>日本語テキストを含むデータでワードクラウドを作成する場合はUTF-8形式のCSVで保存されたものを使ってください。<br>", unsafe_allow_html=True)
         
         
         # アップロードUIを常に表示し、新しいファイルを選択できる
@@ -482,7 +491,7 @@ def main():
             st.warning("データがアップロードされていません。データアップロードページでCSVファイルをアップロードしてください。")
 
     elif page == "変数の加工":
-        st.title("変数の加工（変数をまとめて群分けする）")
+        st.title("変数の加工「回答の値によって群分けする」")
         if st.session_state.df is not None:
             variable_processing(st.session_state.df)
         else:
