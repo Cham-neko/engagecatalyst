@@ -248,17 +248,16 @@ def sentiment_analysis_for_wordcloud(text_column):
 
 
 
-
-
 # マルチコリニアリティのチェック
 def check_multicollinearity(X):
     vif_data = pd.DataFrame()
     vif_data["特徴量"] = X.columns
-    vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(len(X.columns))]
+    vif_data["VIF"] = [variance_inflation_factor(X.values, i) for i in range(X.shape[1])]
     return vif_data
 
 # 回帰分析の実行
 def regression_analysis(df, numeric_columns):
+    # 目的変数と説明変数の選択
     target = st.selectbox("目的変数を選択してください（因果の果）", numeric_columns)
     features = st.multiselect("説明変数を選択してください（因果の因）", [col for col in numeric_columns if col != target])
     
@@ -272,28 +271,45 @@ def regression_analysis(df, numeric_columns):
     # 欠損値を削除する
     X = X.dropna()
     y = y.loc[X.index]  # Xの欠損値を削除した後の行に合わせてyを調整
-    
-    if X.isnull().values.any() or y.isnull().values.any():
-        st.error("欠損値を含むデータがあります。欠損値を除去または補完してください。")
+
+    # 欠損値やデータの空チェック
+    if X.empty or y.empty:
+        st.error("有効なデータがありません。データに欠損がないか確認してください。")
+        return
+
+    if len(X) < 2 or len(y) < 2:
+        st.error("データが少なすぎて分析ができません。")
         return
     
-    # マルチコリニアリティチェック
-    vif_result = check_multicollinearity(X)
-    st.write("マルチコリニアリティチェック結果:　VIFが全て５未満であれば多重共線性（似過ぎ問題）がないと言えます")
-    st.write(vif_result)
-    
-    # 回帰分析を実行
-    model = LinearRegression()
-    model.fit(X, y)
-    
-    coefficients = pd.DataFrame({"特徴量": features, "係数": model.coef_})
-    fig = px.bar(coefficients, x="特徴量", y="係数", title="重回帰分析結果: 特徴量の係数（目的変数に対してそれぞれの説明変数がどの程度因果関係が強いかを表します）")
-    st.plotly_chart(fig)
-    
-    # R^2を強調して表示
-    r_squared = model.score(X, y)
-    st.markdown(f"<p>切片: {model.intercept_:.4f}</p>", unsafe_allow_html=True)
-    st.markdown(f"<p>決定係数 (<span style='color:red; font-weight:bold;'>R²: {r_squared:.4f}</span>)　0.5以上で中程度以上の因果関係があると言えます</p>", unsafe_allow_html=True)
+    try:
+        # マルチコリニアリティチェック
+        vif_result = check_multicollinearity(X)
+        if (vif_result['VIF'] > 5).any():
+            st.warning("VIFが5を超える変数があります。多重共線性の可能性があるため、変数の再選定をお勧めします。")
+
+        st.write("マルチコリニアリティチェック結果: VIFが全て５未満であれば多重共線性（似過ぎ問題）がないと言えます")
+        st.write(vif_result)
+
+        # 回帰分析を実行
+        model = LinearRegression()
+        model.fit(X, y)
+
+        # 重回帰分析の結果表示
+        coefficients = pd.DataFrame({"特徴量": features, "係数": model.coef_})
+        fig = px.bar(coefficients, x="特徴量", y="係数", title="重回帰分析結果: 特徴量の係数（目的変数に対して説明変数がどの程度因果関係が強いかを示します）")
+        st.plotly_chart(fig)
+
+        # R^2を強調して表示
+        r_squared = model.score(X, y)
+        st.markdown(f"<p>切片: {model.intercept_:.4f}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p>決定係数 (<span style='color:red; font-weight:bold;'>R²: {r_squared:.4f}</span>) 0.5以上で中程度以上の因果関係があると言えます</p>", unsafe_allow_html=True)
+
+    except ValueError as e:
+        st.error(f"エラーが発生しました。変数を追加したりデータに問題がないか確認してください。")
+    except Exception as e:
+        st.error(f"予期せぬエラーが発生しました: {str(e)}")
+
+
 
 # 変数の加工
 # 変数の加工における再分類機能の追加
