@@ -323,7 +323,7 @@ def variable_processing(df):
 
         # ユニークな値をリストで表示し、何が入っているかをわかりやすく表示
         st.write("**選択肢の値の一覧**")
-        unique_table = pd.DataFrame({"ユニークな値": unique_values}).reset_index(drop=True)  # インデックスをリセットして表示しない
+        unique_table = pd.DataFrame({"ユニークな値": unique_values})  # インデックスをリセットして表示しない
         st.dataframe(unique_table, hide_index=True)
 
         # ユニークな値がすべて整数かどうかを確認し、整数でなければステップを浮動小数点に設定
