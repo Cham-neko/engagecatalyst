@@ -209,7 +209,12 @@ def create_wordcloud_with_cooccurrence(text_column):
     word_freq = Counter(modified_words)
     
     # ワードクラウドの作成
-    wordcloud = WordCloud(width=800, height=400, background_color='white', font_path='/Library/Fonts/Arial Unicode.ttf').generate_from_frequencies(word_freq)
+   # ワードクラウドの作成 (デフォルトフォントを使用)
+    wordcloud = WordCloud(
+        width=800, 
+        height=400, 
+        background_color='white'  # font_pathを指定しないことでデフォルトフォントを使用
+    ).generate_from_frequencies(word_freq)
     
     # グラフの表示
     fig, ax = plt.subplots(figsize=(10, 5))
