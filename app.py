@@ -345,7 +345,7 @@ def variable_processing(df):
             bin_labels.append(bin_range)
 
         # グループ名の設定
-        group_labels = [f"グループ {i+1}" for i in range(num_bins)]
+        group_labels = [f"Group{i+1}" for i in range(num_bins)]
 
         # 加工後のデータの表形式でのプレビュー
         if st.button("再分類を実行"):
@@ -392,6 +392,10 @@ def crosstab_analysis(df, column_x, column_y, decimal_places):
     # クロス集計の計算（目的変数を行、説明変数を列として設定）
     crosstab = pd.crosstab(df[column_y], df[column_x])
 
+    # 行名がカテゴリの場合、そのカテゴリ情報を保持
+    if pd.api.types.is_categorical_dtype(df[column_y]):
+        crosstab.index = df[column_y].cat.categories
+
     # 説明変数テキストの位置調整
     col1, col2 = st.columns([1, 4])
 
@@ -432,8 +436,8 @@ def crosstab_analysis(df, column_x, column_y, decimal_places):
         crosstab_percent_with_labels = crosstab_percent.copy()
 
         # 行と列のラベル名を削除
-        crosstab_percent_with_labels.index.name = None
-        crosstab_percent_with_labels.columns.name = None
+        # crosstab_percent_with_labels.index.name = None
+        # crosstab_percent_with_labels.columns.name = None
 
         # 選択された小数点位数で丸めて表示
         st.dataframe(crosstab_percent_with_labels.round(decimal_places))
