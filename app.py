@@ -13,7 +13,20 @@ from wordcloud import WordCloud
 from janome.tokenizer import Tokenizer
 from collections import Counter  # ワードクラウド作成に必要
 from itertools import combinations
+import streamlit.components.v1 as components
 
+# Google Analytics tracking code
+ga_code = """
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-G2KBPE365L"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-G2KBPE365L');
+</script>
+"""
 
 # ページ設定
 st.set_page_config(layout="wide", page_title="従業員サーベイデータ分析")
