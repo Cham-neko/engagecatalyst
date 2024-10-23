@@ -207,21 +207,22 @@ def create_wordcloud_with_cooccurrence(text_column):
 
     # 単語と単語ペアの頻出カウント
     word_freq = Counter(modified_words)
-    
+
     # ワードクラウドの作成
-   # ワードクラウドの作成 (デフォルトフォントを使用)
     wordcloud = WordCloud(
         width=800, 
         height=400, 
-        background_color='white'  # font_pathを指定しないことでデフォルトフォントを使用
+        background_color='white', 
+        font_path='NotoSansJP-SemiBold.ttf'  # 日本語フォントのパスを指定
     ).generate_from_frequencies(word_freq)
-    
+
     # グラフの表示
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.imshow(wordcloud, interpolation='bilinear')
     ax.axis("off")
     
     st.pyplot(fig)
+
 
 
 # サンプルでの感情分析の適用（感情分析を視覚的に取り入れる場合の例）
