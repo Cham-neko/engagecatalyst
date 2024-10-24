@@ -28,6 +28,10 @@ ga_code = """
 </script>
 """
 
+# StreamlitにGoogle Analyticsトラッキングコードを埋め込む
+def add_ga_tracking():
+    components.html(ga_code, height=0)
+
 # ページ設定
 st.set_page_config(layout="wide", page_title="従業員サーベイデータ分析")
 
@@ -475,6 +479,9 @@ def main():
         st.session_state.uploaded_file_name = None
 
     if page == "データアップロード":
+
+        # Google Analyticsのトラッキングコードを追加
+        add_ga_tracking()
         # サービス名をページ上部に表示
         st.title("Smart Matrics")
         st.markdown("<h3 style='text-align: center;'>従業員サーベイなどアンケートデータの分析ツールです。</h3>", unsafe_allow_html=True)
