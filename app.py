@@ -48,11 +48,6 @@ def inject_ga():
 inject_ga()
 
 
-
-# StreamlitにGoogle Analyticsトラッキングコードを埋め込む
-def add_ga_tracking():
-    components.html(ga_code, height=0)
-
 # ページ設定
 st.set_page_config(layout="wide", page_title="従業員サーベイデータ分析")
 
