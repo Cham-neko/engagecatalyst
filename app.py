@@ -497,7 +497,7 @@ def main():
     if page == "データアップロード":
 
         # Google Analyticsのトラッキングコードを追加
-        add_ga_tracking()
+        inject_ga()
         # サービス名をページ上部に表示
         st.title("Smart Matrics")
         st.markdown("<h3 style='text-align: center;'>従業員サーベイなどアンケートデータの分析ツールです。</h3>", unsafe_allow_html=True)
