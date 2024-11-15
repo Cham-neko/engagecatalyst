@@ -17,44 +17,27 @@ import streamlit.components.v1 as components
 from bs4 import BeautifulSoup
 import pathlib
 import shutil
-import streamlit as st
 
 # Google AnalyticsのIDとスクリプトを定義
 GA_ID = "G-G2KBPE365L"  # GAコードを設定
-GA_SCRIPT = """
+GA_SCRIPT = f"""
 <!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id={}"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id={GA_ID}"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
 function gtag(){{dataLayer.push(arguments);}}
 gtag('js', new Date());
-gtag('config', '{}');
+gtag('config', '{GA_ID}');
 </script>
 <!-- End Google Analytics -->
-""".format(GA_ID, GA_ID)  # GAスクリプトを定義
+"""
 
 def inject_ga():
-    index_path = pathlib.Path(st.__file__).parent / "static" / "index.html"
-    soup = BeautifulSoup(index_path.read_text(), features="html.parser")
-    
-    # GA_IDが存在しない場合のみGoogle Analyticsをインジェクト
-    if not soup.find(id=GA_ID): 
-        bck_index = index_path.with_suffix('.bck')
-        if bck_index.exists():
-            shutil.copy(bck_index, index_path)  
-        else:
-            shutil.copy(index_path, bck_index)  
-        
-        html = str(soup)
-        # <head>タグの直後にGAスクリプトを挿入
-        new_html = html.replace('<head>', '<head>\n' + GA_SCRIPT)
-        index_path.write_text(new_html)
+    # Streamlit Cloudやサーバーでの利用を考慮してcomponents.htmlで挿入
+    components.html(GA_SCRIPT, height=0)  # height=0で目立たないように設定
 
 # inject_ga関数を呼び出し
 inject_ga()
-
-
-
 
 # ページ設定
 st.set_page_config(layout="wide", page_title="従業員サーベイデータ分析")
