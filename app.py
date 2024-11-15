@@ -19,17 +19,17 @@ import pathlib
 import shutil
 import streamlit as st
 
-GA_ID = "google_analytics"
-GA_SCRIPT = """
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-G2KBPE365L"></script>
-<script id='google_analytics'>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-G2KBPE365L');
-</script>
-"""
+# GA_ID = "google_analytics"
+# GA_SCRIPT = """
+# <!-- Google tag (gtag.js) -->
+# <script async src="https://www.googletagmanager.com/gtag/js?id=G-G2KBPE365L"></script>
+# <script id='google_analytics'>
+#   window.dataLayer = window.dataLayer || [];
+#   function gtag(){dataLayer.push(arguments);}
+#   gtag('js', new Date());
+#   gtag('config', 'G-G2KBPE365L');
+# </script>
+# """
 
 def inject_ga():
     
