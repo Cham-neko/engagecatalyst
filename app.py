@@ -18,29 +18,29 @@ from bs4 import BeautifulSoup
 import pathlib
 import shutil
 
+# ページ設定
+st.set_page_config(layout="wide", page_title="従業員サーベイデータ分析")
+
 # Google AnalyticsのIDとスクリプトを定義
 GA_ID = "G-G2KBPE365L"  # GAコードを設定
-GA_SCRIPT = f"""
+GA_SCRIPT = """
 <!-- Google Analytics -->
-<script async src="https://www.googletagmanager.com/gtag/js?id={GA_ID}"></script>
+<script async src="https://www.googletagmanager.com/gtag/js?id={}"></script>
 <script>
 window.dataLayer = window.dataLayer || [];
 function gtag(){{dataLayer.push(arguments);}}
 gtag('js', new Date());
-gtag('config', '{GA_ID}');
+gtag('config', '{}');
 </script>
 <!-- End Google Analytics -->
-"""
+""".format(GA_ID, GA_ID)  # GAスクリプトを定義
 
 def inject_ga():
-    # Streamlit Cloudやサーバーでの利用を考慮してcomponents.htmlで挿入
+   # Streamlit Cloudやサーバーでの利用を考慮してcomponents.htmlで挿入
     components.html(GA_SCRIPT, height=0)  # height=0で目立たないように設定
-
 # inject_ga関数を呼び出し
 inject_ga()
 
-# ページ設定
-st.set_page_config(layout="wide", page_title="従業員サーベイデータ分析")
 
 # CSSでデザインをカスタマイズ
 def load_css(file_name):
