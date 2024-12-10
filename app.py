@@ -35,6 +35,23 @@ gtag('config', '{}');
 <!-- End Google Analytics -->
 """.format(GA_ID, GA_ID)  # GAスクリプトを定義
 
+# Google AdSenseタグをHTMLとして埋め込む
+adsense_code = """
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8701566989618056"
+     crossorigin="anonymous"></script>
+<!-- display -->
+<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-8701566989618056"
+     data-ad-slot="9354051385"
+     data-ad-format="auto"
+     data-full-width-responsive="true"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+"""
+
+
 def inject_ga():
    # Streamlit Cloudやサーバーでの利用を考慮してcomponents.htmlで挿入
     components.html(GA_SCRIPT, height=0)  # height=0で目立たないように設定
